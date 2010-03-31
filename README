@@ -1,0 +1,83 @@
+sfCookieSessionStoragePlugin
+============================
+
+`sfCookieSessionStoragePlugin` is a cookie-based session storage plugin for the symfony framework. Using this storage, the session data is directly stored in a cookie, only on the client side (no persistent session on the server side).
+
+This removes the need for a shared session storage in a load-balanced platform, since a request from the user also carries the session data. As compared with other solutions for load-balanced session (database or memcache storage), cookie-based session storage is easier to install, and much faster.
+
+Usage
+-----
+ 
+You can use this storage by overriding the storage settings in your `factories.yml`: 
+ 
+    [yml] 
+    all: 
+      storage: 
+        class: sfCookieSessionStorage 
+        param: 
+          session_name: symfony #default value
+          secret:       M@ke $ure you ch0Ose a v3ry long and unique salt 
+
+The `secret` key is compulsory and has no default. If it is too short, a malicious user may be able to change its session data, so choose it wisely.
+
+Session Data Size
+-----------------
+
+Being stored in a cookie, session data is limited to 4 Kb in size. Since the data is encoded in base64, and signed by a digest, it's a little less than that. 
+
+That means that you shouldn't store objects in the session, and limit the session data to small elements.
+
+If you end up with too large session data, you can enable compression on the cookie in the storage parameters:
+
+    [yml] 
+    all: 
+      storage: 
+        class: sfCookieSessionStorage 
+        param: 
+          session_name:    symfony #default value
+          secret:          M@ke $ure you ch0Ose a v3ry long and unique salt
+          use_compression: true
+
+Note that the zlib extension must be anabled in your PHP settings for this option to work.
+
+Data Storage Encryption
+-----------------------
+
+By default, the session data is stored in clear (although encoded in base64), but signed with a unique algorithm. That means that the user can't change the data in the cookie, because the plugin will then detect it and reset the session.
+
+Alternatively, you can use mcrypt to encrypt the session data in the cookie with a reversible algorithm. Be aware that this will slow down your pages, and reduce the interest of cookie-based session storage from a performance point of view.
+
+Tip: If you use suhosin, there is no need to encrypt the session data, since suhosin does the encryption of the cookie itself. 
+
+Enable encryption in the `factories.yml`:
+
+    [yml] 
+    all: 
+      storage: 
+        class: sfCookieSessionStorage 
+        param: 
+          session_name:    symfony   #default value 
+          secret:          R5DSHY73F
+          use_crypt:       true
+          crypt_algorithm: tripledes #default value
+          crypt_mode:      ecb       #default value
+
+Using A Custom Encryption Algorithm
+-----------------------------------
+
+You can use your own callables for the cookie encoding and decoding; just register these callables in the storage settings:
+
+    [yml] 
+    all: 
+      storage: 
+        class: sfCookieSessionStorage 
+        param: 
+          session_name:    symfony   #default value 
+          encode_callable: [myCryptToolkit, encode]
+          decode_callable: [myCryptToolkit, decode]
+
+Miscellaneous
+-------------
+
+ * This plugin is released nuder the MIT License
+ * This plugin is based on previous work by Nicolas Perriault (http://trac.symfony-project.org/attachment/ticket/4447/sfCookieSessionStorage.diff)

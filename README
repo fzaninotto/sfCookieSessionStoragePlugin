@@ -20,6 +20,8 @@ You can use this storage by overriding the storage settings in your `factories.y
 
 The `secret` key is compulsory and has no default. If it is too short, a malicious user may be able to change its session data, so choose it wisely.
 
+By default, the session data is stored in clear (although encoded in base64), but signed with a unique algorithm. That means that the user can't change the data in the cookie, because the plugin will then detect it and reset the session.
+
 Session Data Size
 -----------------
 
@@ -43,38 +45,26 @@ Note that the zlib extension must be anabled in your PHP settings for this optio
 Data Storage Encryption
 -----------------------
 
-By default, the session data is stored in clear (although encoded in base64), but signed with a unique algorithm. That means that the user can't change the data in the cookie, because the plugin will then detect it and reset the session.
+The session data can be decoded on the client size by a smart user, so don't store sensible information in the session. Alternatively, you can use mcrypt to encrypt the session data in the cookie with a reversible algorithm to secure the data. Be aware that this will slow down your pages, and reduce the interest of cookie-based session storage from a performance point of view.
 
-Alternatively, you can use mcrypt to encrypt the session data in the cookie with a reversible algorithm. Be aware that this will slow down your pages, and reduce the interest of cookie-based session storage from a performance point of view.
+Tip: If you use suhosin, there is no need to encrypt the session data, since suhosin does the encryption of the cookie itself.
 
-Tip: If you use suhosin, there is no need to encrypt the session data, since suhosin does the encryption of the cookie itself. 
-
-Enable encryption in the `factories.yml`:
+Enable encryption in the `factories.yml` by changing the storage class to `sfCryptedCookieSessionStorage`:
 
     [yml] 
     all: 
       storage: 
-        class: sfCookieSessionStorage 
+        class: sfCryptedCookieSessionStorage 
         param: 
           session_name:    symfony   #default value 
           secret:          R5DSHY73F
-          use_crypt:       true
           crypt_algorithm: tripledes #default value
           crypt_mode:      ecb       #default value
 
 Using A Custom Encryption Algorithm
 -----------------------------------
 
-You can use your own callables for the cookie encoding and decoding; just register these callables in the storage settings:
-
-    [yml] 
-    all: 
-      storage: 
-        class: sfCookieSessionStorage 
-        param: 
-          session_name:    symfony   #default value 
-          encode_callable: [myCryptToolkit, encode]
-          decode_callable: [myCryptToolkit, decode]
+You can use your own methods for the cookie encoding and decoding logic; just create a class extending `sfCookieSessionStorageBase` and implement the `encode()` and `decode()` methods. Then, use your custom class in the storage settings.
 
 Miscellaneous
 -------------

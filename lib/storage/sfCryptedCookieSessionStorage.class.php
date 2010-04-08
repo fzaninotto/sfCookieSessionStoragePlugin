@@ -15,7 +15,6 @@
  * @subpackage storage
  * @author     Nicolas Perriault <nicolas.perriault@symfony-project.org>
  * @author     François Zaninotto
- * @version    SVN: $Id$
  */
 class sfCryptedCookieSessionStorage extends sfCookieSessionStorageBase
 {
@@ -31,6 +30,7 @@ class sfCryptedCookieSessionStorage extends sfCookieSessionStorageBase
    * And the options of sfCookieSessionStorageBase:
    *  - use_compression:  whether to compress the session data in the cookie (requires zlib)
    *                      (defaults to false)
+   *  - cookie_name:  name of the session data cookie (defaults to the session id)
    *
    * @param  array  $options  Session storage options
    *
@@ -61,10 +61,11 @@ class sfCryptedCookieSessionStorage extends sfCookieSessionStorageBase
    * Encodes data 
    *
    * @param  string  $data  Plain text data
+   * @param  string  $id The session id
    *
    * @return string         Encoded data
    */
-  public function encode($data)
+  public function encode($data, $id)
   {
     $td = $this->initCrypt();
 
@@ -79,10 +80,11 @@ class sfCryptedCookieSessionStorage extends sfCookieSessionStorageBase
    * Decodes data
    *
    * @param  string  $encodedData  Encoded data
+   * @param  string  $id The session id
    *
    * @return string                Decoded data
    */
-  public function decode($encodedData)
+  public function decode($encodedData, $id)
   {
     $encodedData = base64_decode($encodedData);
     

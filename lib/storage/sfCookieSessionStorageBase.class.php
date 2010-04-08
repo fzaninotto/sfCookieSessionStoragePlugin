@@ -16,7 +16,6 @@
  * @subpackage storage
  * @author     Nicolas Perriault <nicolas.perriault@symfony-project.org>
  * @author     François Zaninotto
- * @version    SVN: $Id$
  */
 abstract class sfCookieSessionStorageBase extends sfSessionStorage
 {
@@ -29,6 +28,7 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
    *
    *  - use_compression:  whether to compress the session data in the cookie (requires zlib)
    *                      (defaults to false)
+   *  - cookie_name:  name of the session data cookie (defaults to the session id)
    *
    * @param  array  $options  Session storage options
    *
@@ -39,6 +39,7 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
     $options = array_merge(array(
       // default values
       'use_compression' => false,
+      'cookie_name'     => null,
     ), $options, array(
       // values that can't be changed
       'auto_start'      => false
@@ -109,7 +110,8 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
    */
   public function sessionRead($id)
   {
-    return isset($_COOKIE[$id]) ? $this->decode($this->uncompress($_COOKIE[$id])) : '';
+  	$cookieName = $this->getCookieName($id);
+    return isset($_COOKIE[$cookieName]) ? $this->decode($this->uncompress($_COOKIE[$cookieName]), $id) : '';
   }
 
   /**
@@ -119,7 +121,7 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
    */
   public function sessionDestroy($id)
   {
-    return @setcookie($id, null, strtotime('1 year ago'));
+    return @setcookie($this->getCookieName($id), null, strtotime('1 year ago'));
   }
 
   /**
@@ -140,13 +142,13 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
       $lifeTime += time();
     }
 
-    if (strlen($encData = $this->compress($this->encode($data))) > 4096)
+    if (strlen($encData = $this->compress($this->encode($data, $id))) > 4096)
     {
       throw new LengthException(sprintf('Cookie based session storage cannot store more than 4096 Bytes of data (you provided %d)', strlen($encData)));
     }
 
     // sets the cookie containing the session data
-    $ok = @setcookie($id, $encData, $lifeTime, $this->options['session_cookie_path'], $this->options['session_cookie_domain'], $this->options['session_cookie_secure'], $this->options['session_cookie_httponly']);
+    $ok = @setcookie($this->getCookieName($id), $encData, $lifeTime, $this->options['session_cookie_path'], $this->options['session_cookie_domain'], $this->options['session_cookie_secure'], $this->options['session_cookie_httponly']);
 
     // sends output buffering and turn it off
     !ob_get_length() or ob_end_flush();
@@ -154,6 +156,18 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
     return $ok;
   }
 
+  /**
+   * Get the configured name of the session data cookie
+   *
+   * @param  string  $id The session id
+   *
+   * @return string         Cookie name
+   */
+	protected function getCookieName($id)
+	{
+		return null === $this->options['cookie_name'] ? $id : $this->options['cookie_name'];
+	}
+	
   /**
    * Compresses data 
    *
@@ -197,17 +211,19 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
    * Encodes data 
    *
    * @param  string  $data  Plain text data
+   * @param  string  $id The session id
    *
    * @return string         Encoded data
    */
-  abstract function encode($data);
+  abstract function encode($data, $id);
   
   /**
    * Decodes data
    *
    * @param  string  $encodedData  Encoded data
+   * @param  string  $id The session id
    *
    * @return string                Decoded data
    */
-  abstract function decode($encodedData);
+  abstract function decode($encodedData, $id);
 }

@@ -20,8 +20,32 @@ You can use this storage by overriding the storage settings in your `factories.y
 
 The `secret` key is compulsory and has no default. If it is too short, a malicious user may be able to change its session data, so choose it wisely.
 
-By default, the session data is stored in clear (although encoded in base64), but signed with a unique algorithm. That means that the user can't change the data in the cookie, because the plugin will then detect it and reset the session.
+By default, the session data is stored in clear (although encoded in Base64), but signed with a unique algorithm. That means that the user can't change the data in the cookie, because the plugin will then detect it and reset the session.
 
+Sessoin Data Cookie Name
+------------------------
+
+By default, the session data cookie uses the session id as name:
+
+    symfony=skq8jnubpfji82dsaruc77l8q6
+    skq8jnubpfji82dsaruc77l8q6=c3ltZm9ueS91c2VyL3N--d064bb928a49a03c3d2db2bc657df5b0ddd084ac
+    
+If you want to use a predefined name for the session data cookie, define the `cookie_name` parameter:
+
+    [yml] 
+    all: 
+      storage: 
+        class: sfCookieSessionStorage 
+        param: 
+          session_name: symfony #default value
+          secret:       M@ke $ure you ch0Ose a v3ry long and unique salt 
+          cookie_name:  symfony_data
+
+That way, you can predict the session data cookie name, even on the client side:
+
+    symfony=skq8jnubpfji82dsaruc77l8q6
+    symfony_data=c3ltZm9ueS91c2VyL3N--d064bb928a49a03c3d2db2bc657df5b0ddd084ac
+    
 Session Data Size
 -----------------
 
@@ -45,7 +69,19 @@ Note that the zlib extension must be anabled in your PHP settings for this optio
 Data Storage Encryption
 -----------------------
 
-The session data can be decoded on the client size by a smart user, so don't store sensible information in the session. Alternatively, you can use mcrypt to encrypt the session data in the cookie with a reversible algorithm to secure the data. Be aware that this will slow down your pages, and reduce the interest of cookie-based session storage from a performance point of view.
+By defaut, the session data is encoded in Base64. If you need to access the session data on the client side, you may want to disable this encoding. Set the `use_encoding` parameter to `false` to store cookie data in clear. Note that PHP uses a special serialize algorithm for session data, so you may need to parse the cookie manually to access the data.
+
+    [yml] 
+    all: 
+      storage: 
+        class: sfCookieSessionStorage 
+        param: 
+          session_name: symfony #default value
+          secret:       M@ke $ure you ch0Ose a v3ry long and unique salt
+          use_encoding: false
+
+
+Even when encoded in Base64, the session data can be decoded on the client size by a smart user, so don't store sensible information in the session. Alternatively, you can use mcrypt to encrypt the session data in the cookie with a reversible algorithm to secure the data. Be aware that this will slow down your pages, and reduce the interest of cookie-based session storage from a performance point of view.
 
 Tip: If you use suhosin, there is no need to encrypt the session data, since suhosin does the encryption of the cookie itself.
 

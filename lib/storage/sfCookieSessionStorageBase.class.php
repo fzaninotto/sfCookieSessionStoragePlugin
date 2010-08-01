@@ -44,14 +44,14 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
       // values that can't be changed
       'auto_start'      => false
     ));
-    
+
     if (isset($options['use_compression']) && $options['use_compression'] && !extension_loaded('zlib'))
     {
       throw new sfConfigurationException('zlib extension is required to allow compression of session data in the cookie');
     }
-    
+
     parent::initialize($options);
-    
+
     // turn on output buffering, it will be closed at write time
     ob_start();
 
@@ -111,7 +111,7 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
   public function sessionRead($id)
   {
   	$cookieName = $this->getCookieName($id);
-    return isset($_COOKIE[$cookieName]) ? $this->decode($this->uncompress($_COOKIE[$cookieName]), $id) : '';
+    return isset($_COOKIE[$cookieName]) ? $this->uncompress($this->decode($_COOKIE[$cookieName], $id)) : '';
   }
 
   /**
@@ -142,7 +142,7 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
       $lifeTime += time();
     }
 
-    if (strlen($encData = $this->compress($this->encode($data, $id))) > 4096)
+    if (strlen($encData = $this->encode($this->compress($data), $id)) > 4096)
     {
       throw new LengthException(sprintf('Cookie based session storage cannot store more than 4096 Bytes of data (you provided %d)', strlen($encData)));
     }
@@ -167,9 +167,9 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
 	{
 		return null === $this->options['cookie_name'] ? $id : $this->options['cookie_name'];
 	}
-	
+
   /**
-   * Compresses data 
+   * Compresses data
    *
    * @param  string  $data  Plain text data
    *
@@ -186,10 +186,10 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
     {
       $data = gzdeflate($data, self::COMPRESSION_LEVEL);
     }
-    
+
     return $data;
   }
-  
+
   /**
    * Uncompresses data
    *
@@ -203,12 +203,12 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
     {
       $data = gzinflate($data);
     }
-    
+
     return $data;
   }
-  
+
   /**
-   * Encodes data 
+   * Encodes data
    *
    * @param  string  $data  Plain text data
    * @param  string  $id The session id
@@ -216,7 +216,7 @@ abstract class sfCookieSessionStorageBase extends sfSessionStorage
    * @return string         Encoded data
    */
   abstract function encode($data, $id);
-  
+
   /**
    * Decodes data
    *
